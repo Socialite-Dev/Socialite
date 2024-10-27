@@ -1,0 +1,25 @@
+{% include "navbar.html" %}
+{% if current_user.is_authenticated %}
+<h3>
+    Friends <a href="/friend_request">+</a>
+</h3>
+<ul>
+    {% for friend in friends %}
+    {% if friend[1] %} {# is requested #}
+    <a href="/friend_request/{{friend[0]}}" class="request">{{friend[0] | get_sidebar_user_info | attr('name')}}</a>
+    {% else %}
+    <a href="/wall/{{friend[0]}}">{{friend[0]|get_sidebar_user_info | attr('name')}}</a>
+    {% endif %}
+    <br>
+    {% endfor %}
+</ul>
+<h3>
+    Groups <a href="/group_join">+</a>
+</h3>
+<ul>
+    {% for group in groups %}
+    {% set info = group|get_sidebar_group_info %}
+    <a href="/group/{{group}}">{{info.name}}</a><br>
+    {% endfor %}
+</ul>
+{% endif %}

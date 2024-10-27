@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% import "macros.html" as macros %}
+{% block title %}{{ group.name }}{% endblock %}
+{% block content %}
+<h1>{{ group.name }}</h1>
+{% if is_admin %}
+<h4 id=delete onclick="try_group_delete({{ group.group_id }})">X</h4>
+{% endif %}
+{% if form %}
+{{ macros.post_form("group", group.group_id, form) }}
+{% endif %}
+{% include "feed.html" %}
+{% endblock %}

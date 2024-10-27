@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% import "macros.html" as macros %}
+{% block title %}{{ wall_owner.name }}{% endblock %}
+{% block content %}
+<h1>{{ wall_owner.name }}'s Wall</h1>
+{% if wall_owner.id == current_user.id %}
+<a href="/rename">Rename</a>
+{% else %}
+<a href="/end_friendship/{{wall_owner.id}}">End friendship?</a>
+{% endif %}
+
+{% if form %}
+{{ macros.post_form("wall",wall_owner.id, form) }}
+{% endif %}
+{% include "feed.html" %}
+{% endblock %}

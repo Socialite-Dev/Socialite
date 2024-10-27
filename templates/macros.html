@@ -1,0 +1,91 @@
+{% macro post_template(post) %}
+<div class="post">
+    <p>
+    Posted by <a href='/wall/{{post.author_id}}'><b>{{post.author_id | get_sidebar_user_info | attr("name")}}</b></a>
+    {% if post.type == "group" %}
+    to group <a href='/group/{{post.group_id}}'><b>{{post.group_id | get_sidebar_group_info | attr("name")}}</b></a>
+    {% elif post.wall_id == post.author_id %}
+    to their own wall
+    {% else %}
+    to <a href='/wall/{{post.wall_id}}'><b>{{post.wall_id | get_sidebar_user_info | attr("name")}}</b></a>'s wall
+    {% endif %}
+    <div class="datetime"><p>{{ post.publish_datetime | timestamp_to_datetime}}<p></div>
+    <p>
+    {{post.content}}
+    </p>
+</div>
+{% endmacro %}
+
+{% macro comment_template(comment) %}
+<div class="post">
+<a href='/wall/{{comment.author_id}}'><b>{{comment.author_id | get_sidebar_user_info | attr("name")}}</b></a>
+<div class="datetime"><p>{{ comment.publish_datetime | timestamp_to_datetime}}<p></div>
+{{ comment.content }}
+</div>
+{% endmacro %}
+
+{% macro post_form(type, id, form) %}
+<div class="post-box">
+    <form action="/post/{{ type }}/{{ id}}" method="POST" id="post-form">
+    {{ form.csrf_token }}
+    {% for field in form %}
+        {% if field != form.csrf_token %}    
+            {{field.label}} {{field()}}
+        {% endif %}
+    {% endfor %}
+    <input type="submit" value="submit"> 
+    </form>
+</div>
+{% endmacro %}
+
+{% macro friend_form(form) %}
+<div class="friend_request_form">
+    <form action="/friend_request" method="POST" id="friend-request-form">
+    {{ form.csrf_token }}
+    {% for field in form %}
+        {% if field != form.csrf_token %}
+            {{field.label}} {{field()}}
+        {% endif %}
+    {% endfor %}
+    </form>
+</div>
+{% endmacro %}
+
+{% macro create_group(form) %}
+<div class="create_group_form">
+    <form action="/group_join" method="POST" id="create-group-form">
+    {{ form.csrf_token }}
+    {% for field in form %}
+        {% if field != form.csrf_token %}
+            {{field.label}} {{field()}}
+        {% endif %}
+    {% endfor %}
+    </form>
+</div>
+{% endmacro %}
+
+{% macro join_group(form) %}
+<div class="join_group_form">
+    <form action="/group_join" method="POST" id="join-group-form">
+    {{ form.csrf_token }}
+    {% for field in form %}
+        {% if field != form.csrf_token %}
+            {{field.label}} {{field()}}
+        {% endif %}
+    {% endfor %}
+    </form>
+</div>
+{% endmacro %}
+
+{% macro rename_form(form) %}
+<div class="rename_form">
+    <form action="/rename" method="POST" id="rename-form">
+    {{ form.csrf_token }}
+    {% for field in form %}
+        {% if field != form.csrf_token %}
+            {{field.label}} {{field()}}
+        {% endif %}
+    {% endfor %}
+    </form>
+</div>
+{% endmacro %}

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<p>Hello, what's popping nerds</p>
+<div class="feed-container">
+    <div class="post-box">
+    {% for post in posts %}
+    <p>{{ post.username }} said:
+        {{post.content }}
+    </p>
+    <p class="post-datetime-info">
+        {{post.published_datetime}}
+    </p>
+    {% endfor %}
+    </div>
+</div>
+{% endblock %}

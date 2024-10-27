@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% import "macros.html" as macros %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<h1>Join A Group</h1>
+<h2>Create a group</h2>
+    {{ macros.create_group(create_form) }}
+<h2>Join an existing group</h2>
+    {{ macros.join_group(join_form) }}
+{% endblock %}

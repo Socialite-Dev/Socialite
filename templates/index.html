@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% import "macros.html" as macros %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<h1>Welcome to Socialite</h1>
+{% if form %}
+{{ macros.post_form("wall",current_user.id, form) }}
+{% endif %}
+{% include "feed.html" %}
+{% endblock %}

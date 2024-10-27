@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% import "macros.html" as macros %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<h1>Rename Yourself</h1>
+{% if form %}
+{{ macros.rename_form(form) }}
+{% endif %}
+{% endblock %}

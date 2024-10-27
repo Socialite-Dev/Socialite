@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% import "macros.html" as macros %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<h1>Friend Request</h1>
+{% if form %}
+{{ macros.friend_form(form) }}
+{% else %}
+<h3>Something has gone horribly wrong<h3>
+<p>Redirecting to <a href="/">/</a>. Click to jump if you aren't redirected soon</p>
+<script>window.location.replace("/")</script>
+{% endif %}
+{% include "feed.html" %}
+{% endblock %}

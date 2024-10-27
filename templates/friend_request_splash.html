@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% import "macros.html" as macros %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<h1>Friend Request</h1>
+{% if made %}
+<p>You've made this friend request. Wait for the other person to accept<p>
+<a href="/end_friendship/{{other}}">Click here to cancel</a>
+{% else %}
+<p>{{other | get_sidebar_user_info | attr('name')}} has requested to be friends.
+<a href="/accept_friendship/{{other}}">Accept</a> or <a href="/end_friendship/{{other}}">reject</a></p>
+{% endif %}
+{% include "feed.html" %}
+{% endblock %}

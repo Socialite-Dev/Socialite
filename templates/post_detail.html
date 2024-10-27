@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% import "macros.html" as macros %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<h1>Post by {{ post.author_id | get_sidebar_user_info | attr('name')}}</h1>
+{% if is_admin %}
+<h4 id=delete onclick="try_delete_post('{{ target_t }}', {{ post.id }})">X</h4>
+{% endif %}
+<div class="main-post">
+{{ macros.post_template(post) }}
+</div>
+<div class="post-box">
+    <form action="/comment/{{ target_t }}/{{ post.id }}" method="POST" id="post-form">
+    {{ form.csrf_token }}
+    {% for field in form %}
+        {% if field != form.csrf_token %}    
+            {{field.label}} {{field()}}
+        {% endif %}
+    {% endfor %}
+    <input type="submit" value="submit"> 
+    </form>
+</div>
+<h2>Comments</h1>
+<div id="feed-parent">
+{% for comment in comments %}
+{{ macros.comment_template(comment) }}
+{% endfor %}
+</div>
+{% endblock %}

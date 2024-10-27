@@ -1,0 +1,9 @@
+{% import "macros.html" as macros %}
+<div id="feed-parent">
+    {% for post in posts %}
+    <div onclick="window.location
+         .replace('/posts/{{post.type}}/{{post.id}}')">
+    {{ macros.post_template(post) }}
+    </div>
+    {% endfor %}
+</div>
