@@ -22,6 +22,7 @@ class Base(DeclarativeBase):
     pass
 
 class User(Base):
+    '''ORM mapping of the users table'''
     __tablename__ = "users"
     id: Mapped[int] = mapped_column(primary_key = True)
     name: Mapped[str]
@@ -43,6 +44,7 @@ class User(Base):
     __table_args__ = (UniqueConstraint("name"),)
 
 class WallPost(Base):
+    '''ORM mapping of the WallPost table'''
     __tablename__ = "wall_posts"
     id: Mapped[int] = mapped_column(primary_key = True)
     content: Mapped[str]
@@ -56,6 +58,7 @@ class WallPost(Base):
     comments: Mapped[List["WallPostComment"]] = relationship(cascade = "all, delete-orphan")
 
 class WallPostComment(Base):
+    '''ORM mapping of the WallPostComment table'''
     __tablename__ = "wall_post_comments"
     id: Mapped[int] = mapped_column(primary_key = True)
     content: Mapped[str]
@@ -67,12 +70,14 @@ class WallPostComment(Base):
     post: Mapped["WallPost"] = relationship(back_populates = "comments")
 
 class Friendship(Base):
+    '''ORM mapping of the Friendship table'''
     __tablename__ = "friendships"
     first: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key = True)
     second: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key = True)
     is_request: Mapped[bool]
 
 class PrivateMessage(Base):
+    '''ORM mapping of the PrivateMessage table'''
     __tablename__ = "private_messages"
     id: Mapped[int] = mapped_column(primary_key = True)
     author_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
@@ -83,6 +88,7 @@ class PrivateMessage(Base):
     recipient: Mapped["User"] = relationship(foreign_keys = [recipient_id])
 
 class Group(Base):
+    '''ORM mapping of the Group table'''
     __tablename__ = "groups"
     id: Mapped[int] = mapped_column(primary_key = True)
     name: Mapped[str]
@@ -91,6 +97,7 @@ class Group(Base):
     posts: Mapped[List["GroupPost"]] = relationship(cascade = "all, delete-orphan")
 
 class GroupMembership(Base):
+    '''ORM mapping of the GroupMembership table'''
     __tablename__ = "group_memberships"
     member_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key = True)
     group_id: Mapped[int] = mapped_column(ForeignKey("groups.id"), primary_key = True)
@@ -100,6 +107,7 @@ class GroupMembership(Base):
     member: Mapped["User"] = relationship(back_populates="groups")
 
 class GroupPost(Base):
+    '''ORM mapping of the GroupPost table'''
     __tablename__ = "group_posts"
     id: Mapped[int] = mapped_column(primary_key = True) 
     author_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
@@ -113,6 +121,7 @@ class GroupPost(Base):
     comments: Mapped[List["GroupPostComment"]] = relationship(cascade = "all, delete-orphan")
 
 class GroupPostComment(Base):
+    '''ORM mapping of the GroupPostComment table'''
     __tablename__ = "group_post_comments"
     id: Mapped[int] = mapped_column(primary_key = True)
     content: Mapped[str]
@@ -124,6 +133,7 @@ class GroupPostComment(Base):
     post: Mapped["GroupPost"] = relationship(back_populates = "comments")
 
 def generate_feed(user_id: int) -> List[dict]:
+    '''Returns a list of posts that populate a user's main feed on the home page'''
     group_post_query = select(GroupPost, 2).where(GroupPost.group_id.in_(
         select(GroupMembership.group_id).where(GroupMembership.member_id == user_id))
     )
@@ -275,7 +285,9 @@ def comment_to_wall(author_id: int, content: str, parent_id: int) -> bool:
             "author_id": author_id,
             "publish_datetime": post.publish_datetime,
         }
+
 def user_exists(id: int) -> bool:
+    '''Checks if a user exists'''
     with Session(engine) as session:
         stmt = select(text("null")).where(User.id == id)
         return session.execute(stmt).one_or_none() is not None
@@ -293,6 +305,7 @@ def grab_info_for(id: int) -> Tuple[str, bool] | None:
         return (result.name, result.is_teacher)
 
 class AuthenticationError(enum.Enum):
+    '''Enum describing the failstates of an authentication attempt'''
     UserDoesNotExist = enum.auto()
     IncorrectPassword = enum.auto()
 
@@ -323,6 +336,7 @@ def authenticate(username: str, password: str) -> int | AuthenticationError :
         return user.id
 
 def register(name: str, password: str):
+    '''Attempts to register a user. Returns a bool representing success'''
     if user_exists(name):
         return False
     with Session(engine) as session:
@@ -344,6 +358,7 @@ def register(name: str, password: str):
     return True
 
 def are_friends(a_id: int, b_id: int) -> bool:
+    '''Checks if two users are friends'''
     stmt = select(Friendship.is_request).where(
         or_(
             and_(
@@ -362,45 +377,26 @@ def are_friends(a_id: int, b_id: int) -> bool:
         else:
             return not res[0]
 
-def conv_wall_post_to_dict(post: WallPost):
-    return {
-        "type": "wall",
-        "content": post.content,
-        "publish_datetime": post.publish_datetime,
-        "author_id": post.author_id,
-        "wall_id": post.wall_id,
-    }
-
 def posts_to_wall(wall_id: int):
+    '''Returns a list of all posts to a walll'''
     stmt = select(WallPost).where(WallPost.wall_id == wall_id).order_by(text('publish_datetime DESC'))
     with Session(engine) as session:
         return list(tag(obj, {"type": "wall"}) for obj in session.scalars(stmt))
 
-def conv_group_post_to_dict(post: GroupPost):
-    return {
-        "type": "group",
-        "content": post.content,
-        "publish_datetime": post.publish_datetime,
-        "author_id": post.author_id,
-        "group_id": post.group_id,
-    }
-
 def posts_to_group(group_id: int):
+    '''Returns a list of all posts to a group'''
     stmt = select(GroupPost).where(GroupPost.group_id == group_id).order_by(text('publish_datetime DESC'))
     with Session(engine) as session:
         return list(tag(post, {"type": "group"}) for post in session.scalars(stmt))
 
-def conv_user_to_dict(user: User):
-    return {
-        "name": user.name,
-    }
-
 def get_user_by_id(user_id: int):
+    '''Get a user object by id'''
     stmt = select(User).where(User.id == user_id)
     with Session(engine) as session:
         return session.execute(stmt).scalar_one_or_none()
 
 def is_group_member(user: int, group_id: int):
+    '''Returns a bool representing if a user is a member of a particular group'''
     stmt = select(GroupMembership).where(
         and_(GroupMembership.member_id == user, GroupMembership.group_id == group_id)
     )
@@ -423,11 +419,13 @@ def get_groups_of(user: int) -> List[int]:
         return [_[0] for _ in session.execute(stmt)]
 
 class UserSidebarInfo:
+    '''Represents the information needed to provide a sidebar entry for a user'''
     def __init__(self, name: str):
         self.name = name
 
 
 def get_sidebar_user_info(user: int) -> UserSidebarInfo | None:
+    '''Gets the information for a sidebar entry for a particular user'''
     stmt = select(User.name).where(User.id == user)
 
     with Session(engine) as session:
@@ -438,11 +436,13 @@ def get_sidebar_user_info(user: int) -> UserSidebarInfo | None:
         return UserSidebarInfo(name = result[0])
 
 class GroupSidebarInfo:
+    '''Represents the information needed to provide a sidebar entry for a group'''
     def __init__(self, group_id: int, name: str):
         self.name = name
         self.group_id = group_id
 
 def get_sidebar_group_info(group: int) -> GroupSidebarInfo | None:
+    '''Gets the information for a sidebar entry for a particular group'''
     stmt = select(Group.name).where(Group.id == group)
 
     with Session(engine) as session:
@@ -453,48 +453,56 @@ def get_sidebar_group_info(group: int) -> GroupSidebarInfo | None:
         return GroupSidebarInfo(group_id = group, name = result[0])
 
 def get_wall_post(id: int):
+    '''Gets a wall post by id'''
     stmt = select(WallPost).where(WallPost.id == id)
 
     with Session(engine) as session:
         return session.scalars(stmt).one_or_none()
 
 def tag(obj, tag: dict):
+    '''Helper function to add values to a object functionally. Returns obj but with attrs set'''
     for key,value in tag.items():
         setattr(obj, key, value)
 
     return obj
 
 def get_group_post(id: int):
+    '''Get's a group post by id'''
     stmt = select(GroupPost).where(GroupPost.id == id)
 
     with Session(engine) as session:
         return tag(session.scalars(stmt).one_or_none(), {"type": "group"})
 
 def get_wall_post_comments(parent_id: int):
+    '''Get a list of comments on a wall post'''
     stmt = select(WallPostComment).where(WallPostComment.post_id == parent_id).order_by(text('publish_datetime DESC'))
 
     with Session(engine) as session:
         return list(session.scalars(stmt))
 
 def get_group_post_comments(parent_id: int):
+    '''Gets a list of comments on a group post'''
     stmt = select(GroupPostComment).where(GroupPostComment.post_id == parent_id).order_by(text('publish_datetime DESC'))
 
     with Session(engine) as session:
         return list(session.scalars(stmt))
 
 def wall_post_owner(post_id: int):
+    '''Gets the id of a wall post's wall owneer'''
     stmt = select(WallPost.author_id).where(WallPost.id == post_id)
 
     with Session(engine) as session:
         return session.execute(stmt).one_or_none()
 
 def group_post_group(post_id: int):
+    '''Get's the id of a group post's group'''
     stmt = select(GroupPost.group_id).where(GroupPost.id == post_id)
 
     with Session(engine) as session:
         return session.execute(stmt).one_or_none()
 
 def can_see_detail_on_post(target_t: str, current_user_id: int, post_id: int) -> bool:
+    '''Checks if a user can see a detailed view of a post (equiv. they can see the post at all)'''
     if target_t == "wall":
         post_owner = wall_post_owner(post_id)
         if post_owner is None:
@@ -512,6 +520,7 @@ def can_see_detail_on_post(target_t: str, current_user_id: int, post_id: int) ->
     return False
 
 def friend_request(requester_id: int, requestee_name: str) -> bool:
+    '''Creates a friend request from the requester to a user with name == requestee_name'''
     with Session(engine) as session:
         requestee_id = session.execute(
                 select(User.id).where(User.name == requestee_name)
@@ -536,13 +545,16 @@ def friend_request(requester_id: int, requestee_name: str) -> bool:
         return True
 
 def requester(first: id, second: id):
+    '''Returns the id of the user who requested a friendship'''
     stmt = select(Friendship.first).where(and_(Friendship.first == first, Friendship.second == second)).union(
             select(Friendship.first).where(and_(Friendship.first == second, Friendship.second == first)))
     with Session(engine) as session:
         return session.execute(stmt).one_or_none()
 
 def accept_friend_request(self: id, other: id):
+    '''Changes a friend request into a friendship'''
     with Session(engine) as session:
+        # Leverages the fact that acceptance has to come from second
         res = session.scalar(select(Friendship).where(and_(Friendship.first == other, Friendship.second == self)))
 
         if res is None:
@@ -558,6 +570,7 @@ def accept_friend_request(self: id, other: id):
         return True
 
 def end_friendship(self: id, other: id):
+    '''Deletes a friendship between self and other. Returns whether it succeeds'''
     with Session(engine) as session:
         res = session.scalar(
                 select(Friendship).from_statement(select(Friendship).where(and_(Friendship.first == other, Friendship.second == self)).union(
@@ -576,6 +589,7 @@ def end_friendship(self: id, other: id):
         return True
 
 def create_group(user_id: int, group_name: str):
+    '''Creates a group, owned by the user with id user_id'''
     with Session(engine) as session:
         group = Group(
             name = group_name
@@ -599,6 +613,7 @@ def create_group(user_id: int, group_name: str):
         return True
 
 def join_group(user_id: int, group_id: int):
+    '''Adds a user as a member of a group'''
     with Session(engine) as session:
         membership = GroupMembership(
                 group_id = group_id,
@@ -616,6 +631,7 @@ def join_group(user_id: int, group_id: int):
         return True
 
 def delete_group(group_id: int):
+    '''Deletes a group with id == group_id. Returns bool regarding whether it succeeded'''
     with Session(engine) as session:
         group = session.scalar(select(Group).where(Group.id == group_id))
         if group is None:
@@ -630,6 +646,7 @@ def delete_group(group_id: int):
         return True
 
 def rename(user_id: int, name: str):
+    '''Renames a user with id == user_id to have name = name. Returns whether it was successful'''
     with Session(engine) as session:
         user = session.scalar(select(User).where(User.id == user_id))
         if user is None:
@@ -644,6 +661,7 @@ def rename(user_id: int, name: str):
         return True
 
 def is_wall_admin(user_id: int, wall_id: int):
+    '''Returns a bool representing if user is admin of wall. i.e it's theirs or they are site admin'''
     if wall_id == user_id:
         return True
 
@@ -652,6 +670,7 @@ def is_wall_admin(user_id: int, wall_id: int):
         return res is not None and res
 
 def is_wall_post_admin(user_id: int, post_id: int):
+    '''Returns a bool representing whether the user is an admin of the wall where the wall post was posted'''
     with Session(engine) as session:
         wall_id = session.scalar(select(WallPost.wall_id).where(WallPost.id == post_id))
         if wall_id is None:
@@ -664,6 +683,7 @@ def is_wall_post_admin(user_id: int, post_id: int):
         return res is not None and res
 
 def is_group_admin(user_id: int, group_id: int):
+    '''Returns a bool representing if user is admin of wall. i.e explicit admin or they are site admin'''
     with Session(engine) as session:
         user = session.scalar(select(User.is_teacher).where(User.id == user_id))
         group_admin = session.scalar(select(GroupMembership.is_admin).where(and_(
@@ -674,6 +694,7 @@ def is_group_admin(user_id: int, group_id: int):
         return user or group_admin
 
 def is_group_post_admin(user_id: int, post_id: int):
+    '''Returns a bool representing whether the user is an admin of the grou where the group post was posted'''
     with Session(engine) as session:
         group_id = session.scalar(select(GroupPost.group_id).where(GroupPost.id == post_id))
         print(f"{group_id=}")
@@ -691,6 +712,7 @@ def is_group_post_admin(user_id: int, post_id: int):
         return user or group_admin
 
 def delete_post(target_t: str, post_id: str):
+    '''Thin wrapper around deleting wall or group post'''
     if target_t == "wall":
         return delete_wall_post(post_id)
     elif target_t == "group":
@@ -699,6 +721,7 @@ def delete_post(target_t: str, post_id: str):
         return False
 
 def delete_wall_post(post_id):
+    '''Deletes wall post with id == post_id'''
     with Session(engine) as session:
         post = session.scalar(select(WallPost).where(WallPost.id == post_id))
         if post is None:
@@ -713,6 +736,7 @@ def delete_wall_post(post_id):
         return True
 
 def delete_group_post(post_id):
+    '''Deletes group post with id == post_id'''
     with Session(engine) as session:
         post = session.scalar(select(GroupPost).where(GroupPost.id == post_id))
         if post is None:
@@ -727,6 +751,7 @@ def delete_group_post(post_id):
         return True
 
 def can_comment_on_wall_post(user_id: int, post_id: int):
+    '''Checks if a user can comment on a wall post (i.e. they are allowed to see it)'''
     with Session(engine) as session:
         resp = session.scalar(select(WallPost.wall_id).where(WallPost.id == post_id))
         if resp is None:
@@ -735,6 +760,7 @@ def can_comment_on_wall_post(user_id: int, post_id: int):
         return user_id == resp or are_friends(user_id, resp)
 
 def can_comment_on_group_post(user_id: int, post_id: int):
+    '''Checks if a user can comment on a group post (i.e. they are allowed to see it)'''
     with Session(engine) as session:
         resp = session.scalar(select(GroupPost.group_id).where(GroupPost.id == post_id))
         if resp is None:

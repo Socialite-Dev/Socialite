@@ -66,6 +66,7 @@ def get_shared_logged_in_template_values(user: int):
 
 @app.route("/")
 def index():
+    '''Homepage route'''
     if current_user.is_authenticated:
         return render_template("index.html",
             posts = database.generate_feed(current_user.id),
@@ -76,7 +77,8 @@ def index():
         return render_template("index.html")
         
 @app.route("/login", methods=["GET","POST"])
-def login(): 
+def login():
+    '''Login website page / API route'''
     if current_user.is_authenticated:
         return redirect("/")
 
@@ -94,12 +96,14 @@ def login():
 
 @app.route("/logout")
 def logout():
+    '''Logout endpoint - clears session cookie of info'''
     if current_user.is_authenticated:
         flask_login.logout_user()
     return redirect("/")
 
 @app.route("/register", methods=["GET","POST"])
 def register(): 
+    '''Register website page / API route'''
     if current_user.is_authenticated:
         return redirect("/")
 
@@ -117,6 +121,7 @@ def has_permission_to_access_wall(user: int, wall: int):
 
 @app.route("/wall/<int:id>")
 def render_wall(id: int):
+    '''Route for handling generation of a wall's page'''
     if not current_user.is_authenticated:
         return redirect("/", 400)
     
@@ -132,6 +137,7 @@ def render_wall(id: int):
 
 @app.route("/group/<int:id>")
 def render_group(id: int):
+    '''Route for handling generation of a group's page'''
     if not current_user.is_authenticated:
         return redirect("/", 400)
     
@@ -148,6 +154,7 @@ def render_group(id: int):
 
 @app.route("/post/<string:target_t>/<int:id>", methods=["POST"])
 def post_handler(target_t: str, id: int):
+    '''POST endpoint to make a post'''
     if not current_user.is_authenticated:
         return redirect("/", 401)
 
@@ -175,6 +182,7 @@ def post_handler(target_t: str, id: int):
 
 @app.route("/comment/<string:target_t>/<int:id>", methods=["POST"])
 def comment_handler(target_t: str, id: int):
+    '''POST endpoint to create comments on a post'''
     if not current_user.is_authenticated:
         return redirect("/", 401)
 
@@ -203,6 +211,7 @@ def comment_handler(target_t: str, id: int):
 
 @app.route("/posts/<string:target_t>/<int:id>")
 def detailed_post(target_t: str, id: int):
+    '''Renders detailed view of a post'''
     if current_user.is_authenticated and database.can_see_detail_on_post(target_t, current_user.id, id):
         comments = None
         post = None
@@ -242,6 +251,7 @@ def detailed_post(target_t: str, id: int):
 
 @app.route("/friend_request", methods=["POST", "GET"])
 def friend_request():
+    '''Handles page for making a friend request and provides POST endpoint to add request into model'''
     if not current_user.is_authenticated:
         return redirect("/")
    
@@ -256,6 +266,7 @@ def friend_request():
 
 @app.route("/friend_request/<int:id>")
 def friend_request_splash(id: int):
+    '''Renders page for displaying existing friend request info'''
     if not current_user.is_authenticated:
         return redirect("/")
    
@@ -270,6 +281,7 @@ def friend_request_splash(id: int):
 
 @app.route("/accept_friendship/<int:id>")
 def accept_friend_request(id: int):
+    '''Endpoint to accept a friend request'''
     if not current_user.is_authenticated:
         return redirect("/")
     
@@ -278,6 +290,7 @@ def accept_friend_request(id: int):
 
 @app.route("/end_friendship/<int:id>")
 def end_friendship(id: int):
+    '''Endpoint to end a friendship / reject friend request'''
     if not current_user.is_authenticated:
         return redirect("/")
 
@@ -286,6 +299,7 @@ def end_friendship(id: int):
 
 @app.route("/group_join", methods = ["POST", "GET"])
 def join_group():
+    '''Renders webpage / handles POST request to join / create a group'''
     if not current_user.is_authenticated:
         return redirect("/")
 
@@ -304,6 +318,7 @@ def join_group():
 
 @app.route("/delete_group", methods = ["POST"])
 def delete_group():
+    '''POST endpoint to handle group deletion'''
     if current_user.is_authenticated:
         if database.is_group_admin(current_user.id, request.json['id']):
             if database.delete_group(request.json['id']):
@@ -313,6 +328,7 @@ def delete_group():
 
 @app.route("/rename", methods = ["GET", "POST"])
 def rename():
+    '''Renders page for / handles POST request to rename username'''
     if not current_user.is_authenticated:
         return redirect("/")
 
@@ -326,6 +342,7 @@ def rename():
 
 @app.route("/delete_post", methods = ["POST"])
 def delete_post():
+    '''POST endpoint for an admin / wall owner to delete a post'''
     if current_user.is_authenticated:
         if database.delete_post(request.json['target_t'], request.json['post_id']):
             return make_response("SUCCESS", 200)
